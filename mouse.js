@@ -1,35 +1,55 @@
-let mouse, mmove;
-
+let mouse;
 mouse = {
-  l: {x: 0, y: 0},
-  ll: {x: 0, y: 0},
-  get delt () {
-    if (!this.l.x > 0) {return null}
-    if (!this.ll.x > 0) {return null}
-    return {x: this.l.x - this.x, y: this.l.y - this.y}
+  l: {x: 0, y: 0}, ll: {x: 0, y: 0},
+  sloc (e, cvs) {
+    if (cvs != null) {this.l.x = e.clientX - cvs.offsetTop; this.l.y = e.clientY - cvs.offsetLeft; return}
+    this.l.x = e.clientX; this.l.y = e.clientY;
+  },
+  slloc (e, cvs) {
+    if (cvs != null) {this.ll.x = this.l.x; this.ll.y = this.l.y; return}
+    this.ll.x = e.offsetX; this.ll.y = e.offsetY;
+  },
+  get delta () {
+    return {x: this.ll.x - this.l.x, y: this.ll.y - this.l.y}
   },
   get abs () {
-    if (this.delta == null) {return null}
-    return {x: Math.abs(this.delt.x), y: Math.abs(this.delt.y)}
+    return {x: Math.abs(this.delta.x), y: Math.abs(this.delta.y)}
   },
   _direc () {
-    this.direction = mouse.abs.x > mouse.abs.y ? (mouse.delta.x > 0 ? 'left' : 'right') : (mouse.delta.y > 0 ? 'up', 'down');
+    this.dir = this.abs.x > this.abs.y ? (this.delta.x > 0 ? 'left' : 'right') : (this.delta.y > 0 ? 'up' : 'down');
+    if (this.dir !== this.ldir) {this.chdirec = !0} else {this.chdirec = !1}
+    this.ldir = this.dir;
   },
-  direction: null,
-  pressed: !1,
-  chdirec: !1, // changed direction
-  moving: !1,
-  cursor (icon) {cvs.style.cursor = icon}
+  cursor (icon, cvs) {cvs.style.cursor = icon},
+  ldir: null, dir: null, pressed: !1,
+  chdirec: !1, moving: !1,
+  mvms: 500, mvid: null,
+  drag: !1,
+  mvfn () {
+    if (this.mvms === 0) {
+      this.moving = !1;
+      this.mvid = clearInterval(this.mvid);
+      this.mvms = 500;
+    }
+    this.mvms--;
+  }
 }
-mmove = setTimeout(() => {
-  
-}, 1000)
+mouse.dt.mvfn = mouse.dt.mvfn.bind(mouse.dt);
 window.addEventListener('mousemove', (e) => {
-  mouse.l.x = e.clientX - cvs.offsetLeft; mouse.l.y = e.clientY - cvs.offsetTop;
-  
-  mouse._direc();
-  
-  mouse.ll.x = mouse.l.x; mouse.ll.y = mouse.l.y;
+  if (mouse.mvid != null) {
+    mouse.mvid = clearInterval(mouse.mvid);
+    mouse.mvid = setInterval(mouse.mvfn, mouse.mvms);
+  } else {
+    mouse.mvid = setInterval(mouse.mvfn, mouse.mvms);
+  }
+  mouse.moving = !0;
+  mouse.sloc(e); mouse._direc(); mouse.slloc(e);
 });
-window.addEventListener('mouseup', () => mouse.pressed = !1);
-window.addEventListener('mousedown', () => mouse.pressed = !0);
+window.addEventListener('mouseup', (e) => {
+  mouse.pressed = !1;
+  mouse.sloc(e); mouse._direc(); mouse.slloc(e);
+});
+window.addEventListener('mousedown', (e) => {
+  mouse.pressed = !0;
+  mouse.sloc(e); mouse._direc(); mouse.slloc(e);
+});
